@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -193,7 +194,7 @@ export default function Perfil() {
 
       const file = event.target.files[0]
       const fileExt = file.name.split('.').pop()
-      const fileName = `avatar-${user?.id}-${Math.random()}.${fileExt}`
+      const fileName = `${user?.id}/avatar-${Math.random()}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
