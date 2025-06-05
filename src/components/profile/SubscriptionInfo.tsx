@@ -44,14 +44,14 @@ export function SubscriptionInfo() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('assinaturaId')
+        .select('assinaturaid')
         .eq('id', user?.id)
         .single()
 
       if (error) throw error
       
-      if (data?.assinaturaId) {
-        setAssinaturaId(data.assinaturaId)
+      if (data?.assinaturaid) {
+        setAssinaturaId(data.assinaturaid)
       } else {
         setLoading(false)
       }

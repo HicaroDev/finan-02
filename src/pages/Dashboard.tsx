@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,14 +27,17 @@ interface Transacao {
   valor: number | null
   detalhes: string | null
   tipo: string | null
-  categoria: string | null
-  userId: string | null
+  category_id: string
+  userid: string | null
+  categorias?: {
+    nome: string
+  }
 }
 
 interface Lembrete {
   id: number
   created_at: string
-  userId: string | null
+  userid: string | null
   descricao: string | null
   data: string | null
   valor: number | null
@@ -90,11 +94,16 @@ export default function Dashboard() {
       
       console.log('Dashboard: Date range:', { startDate, endDate })
 
-      // Buscar transações - usando campo 'quando' para filtro de data
+      // Buscar transações com join nas categorias
       const { data: transacoes, error: transacoesError } = await supabase
         .from('transacoes')
-        .select('*')
-        .eq('userId', user.id)
+        .select(`
+          *,
+          categorias (
+            nome
+          )
+        `)
+        .eq('userid', user.id)
         .gte('quando', startDate.toISOString().split('T')[0])
         .lte('quando', endDate.toISOString().split('T')[0])
         .order('quando', { ascending: false })
@@ -106,11 +115,11 @@ export default function Dashboard() {
 
       console.log('Dashboard: Transactions fetched:', transacoes?.length || 0)
 
-      // Buscar lembretes - formatando datas corretamente
+      // Buscar lembretes
       const { data: lembretes, error: lembretesError } = await supabase
         .from('lembretes')
         .select('*')
-        .eq('userId', user.id)
+        .eq('userid', user.id)
         .gte('data', startDate.toISOString().split('T')[0])
         .lte('data', endDate.toISOString().split('T')[0])
         .order('data', { ascending: true })
@@ -156,8 +165,8 @@ export default function Dashboard() {
     const categorias: { [key: string]: number } = {}
     
     transacoes.forEach(t => {
-      if (t.categoria && t.valor && t.tipo === 'despesa') {
-        categorias[t.categoria] = (categorias[t.categoria] || 0) + Math.abs(t.valor)
+      if (t.categorias?.nome && t.valor && t.tipo === 'despesa') {
+        categorias[t.categorias.nome] = (categorias[t.categorias.nome] || 0) + Math.abs(t.valor)
       }
     })
 
