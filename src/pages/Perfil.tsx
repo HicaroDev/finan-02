@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
 import { SubscriptionInfo } from '@/components/profile/SubscriptionInfo'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/hooks/use-toast'
 import { Camera, User, Trash2, Settings, CreditCard, Shield } from 'lucide-react'
@@ -271,7 +270,7 @@ export default function Perfil() {
       const { error: transacoesError } = await supabase
         .from('transacoes')
         .delete()
-        .eq('userId', user?.id)
+        .eq('userid', user?.id)
 
       if (transacoesError) {
         console.error('Erro ao deletar transações:', transacoesError)
@@ -283,11 +282,23 @@ export default function Perfil() {
       const { error: lembretesError } = await supabase
         .from('lembretes')
         .delete()
-        .eq('userId', user?.id)
+        .eq('userid', user?.id)
 
       if (lembretesError) {
         console.error('Erro ao deletar lembretes:', lembretesError)
         throw lembretesError
+      }
+
+      // Delete all user categories
+      console.log('Deletando categorias do usuário...')
+      const { error: categoriasError } = await supabase
+        .from('categorias')
+        .delete()
+        .eq('userid', user?.id)
+
+      if (categoriasError) {
+        console.error('Erro ao deletar categorias:', categoriasError)
+        throw categoriasError
       }
 
       console.log('Dados do usuário deletados com sucesso')

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/hooks/use-toast'
 import { Plus, Edit, Trash2, Calendar, Clock } from 'lucide-react'
@@ -15,7 +15,7 @@ import { Plus, Edit, Trash2, Calendar, Clock } from 'lucide-react'
 interface Lembrete {
   id: number
   created_at: string
-  userId: string | null
+  userid: string | null
   descricao: string | null
   data: string | null
   valor: number | null
@@ -44,7 +44,7 @@ export default function Lembretes() {
       const { data, error } = await supabase
         .from('lembretes')
         .select('*')
-        .eq('userId', user?.id)
+        .eq('userid', user?.id)
         .order('data', { ascending: true })
 
       if (error) throw error
@@ -68,7 +68,7 @@ export default function Lembretes() {
         descricao: formData.descricao,
         data: formData.data,
         valor: formData.valor ? parseFloat(formData.valor) : null,
-        userId: user?.id,
+        userid: user?.id,
       }
 
       if (editingLembrete) {
@@ -141,7 +141,7 @@ export default function Lembretes() {
       const { error } = await supabase
         .from('lembretes')
         .delete()
-        .eq('userId', user?.id)
+        .eq('userid', user?.id)
 
       if (error) throw error
       toast({ title: "Todos os lembretes foram excluídos com sucesso!" })
