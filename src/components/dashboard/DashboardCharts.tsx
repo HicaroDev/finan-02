@@ -51,13 +51,17 @@ export function DashboardCharts({ transacoes }: DashboardChartsProps) {
     ]
   }
 
+  const totalReceitas = transacoes.filter(t => t.tipo === 'receita').reduce((sum, t) => sum + (t.valor || 0), 0)
+  const totalDespesas = transacoes.filter(t => t.tipo === 'despesa').reduce((sum, t) => sum + (t.valor || 0), 0)
+  const saldo = totalReceitas - totalDespesas
+
   const stats = {
-    totalReceitas: transacoes.filter(t => t.tipo === 'receita').reduce((sum, t) => sum + (t.valor || 0), 0),
-    totalDespesas: transacoes.filter(t => t.tipo === 'despesa').reduce((sum, t) => sum + (t.valor || 0), 0),
+    totalReceitas,
+    totalDespesas,
+    saldo,
     transacoesCount: transacoes.length,
     lembretesCount: 0 // This should come from props if needed
   }
-  stats.saldo = stats.totalReceitas - stats.totalDespesas
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
