@@ -1,14 +1,12 @@
+
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/hooks/use-toast'
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Filter, Lightbulb } from 'lucide-react'
-import { formatCurrency } from '@/utils/currency'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { DashboardStats } from '@/components/dashboard/DashboardStats'
+import { DashboardFilters } from '@/components/dashboard/DashboardFilters'
+import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
+import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 
 interface DashboardStats {
   totalReceitas: number
@@ -39,17 +37,6 @@ interface Lembrete {
   valor: number | null
 }
 
-const COLORS = ['#4361ee', '#7209b7', '#f72585', '#4cc9f0', '#4895ef', '#4361ee']
-
-const dicas = [
-  "💡 Sempre registre suas despesas no mesmo dia para não esquecer",
-  "💡 Defina metas mensais de economia e acompanhe seu progresso",
-  "💡 Categorize suas despesas para identificar onde gasta mais",
-  "💡 Configure lembretes para não perder datas de pagamento",
-  "💡 Revise seus gastos semanalmente para manter o controle",
-  "💡 Separe uma quantia fixa para emergências todo mês"
-]
-
 export default function Dashboard() {
   const { user } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
@@ -64,7 +51,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth().toString())
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString())
-  const [dicaDoDia] = useState(dicas[new Date().getDate() % dicas.length])
 
   useEffect(() => {
     if (user?.id) {
@@ -152,57 +138,20 @@ export default function Dashboard() {
     }
   }
 
-  const getChartData = () => {
-    const categorias: { [key: string]: number } = {}
-    
-    transacoes.forEach(t => {
-      if (t.categoria && t.valor && t.tipo === 'despesa') {
-        categorias[t.categoria] = (categorias[t.categoria] || 0) + Math.abs(t.valor)
-      }
-    })
-
-    return Object.entries(categorias).map(([categoria, valor]) => ({
-      categoria,
-      valor
-    }))
-  }
-
-  const getPieData = () => {
-    const receitas = transacoes.filter(t => t.tipo === 'receita').reduce((sum, t) => sum + (t.valor || 0), 0)
-    const despesas = transacoes.filter(t => t.tipo === 'despesa').reduce((sum, t) => sum + (t.valor || 0), 0)
-
-    return [
-      { name: 'Receitas', value: receitas },
-      { name: 'Despesas', value: Math.abs(despesas) }
-    ]
-  }
-
-  const proximoLembrete = lembretes
-    .filter(l => l.data && new Date(l.data) >= new Date())
-    .sort((a, b) => new Date(a.data!).getTime() - new Date(b.data!).getTime())[0]
-
   // Show loading state
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-            <p className="text-muted-foreground">Carregando suas finanças pessoais...</p>
-          </div>
-        </div>
+        <DashboardFilters 
+          filterMonth={filterMonth}
+          filterYear={filterYear}
+          setFilterMonth={setFilterMonth}
+          setFilterYear={setFilterYear}
+          transactionCount={0}
+        />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 bg-muted rounded w-20"></div>
-                <div className="h-4 w-4 bg-muted rounded"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded w-24 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-32"></div>
-              </CardContent>
-            </Card>
+            <div key={i} className="animate-pulse bg-muted rounded-lg h-32"></div>
           ))}
         </div>
       </div>
@@ -223,255 +172,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Visão geral das suas finanças pessoais
-            {transacoes.length > 0 && ` • ${transacoes.length} transações encontradas`}
-          </p>
-        </div>
-        
-        <div className="flex gap-2 items-center">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 12 }, (_, i) => (
-                <SelectItem key={i} value={i.toString()}>
-                  {new Date(0, i).toLocaleDateString('pt-BR', { month: 'long' })}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 5 }, (_, i) => {
-                const year = new Date().getFullYear() - 2 + i
-                return (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <DashboardFilters 
+        filterMonth={filterMonth}
+        filterYear={filterYear}
+        setFilterMonth={setFilterMonth}
+        setFilterYear={setFilterYear}
+        transactionCount={transacoes.length}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Receitas
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(stats.totalReceitas)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Mês atual
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Despesas
-            </CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(stats.totalDespesas)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Mês atual
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-primary">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Saldo Atual
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${stats.saldo >= 0 ? 'text-primary' : 'text-red-600'}`}>
-              {formatCurrency(stats.saldo)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Receitas - Despesas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Lembretes Ativos
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {stats.lembretesCount}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Este mês
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardStats stats={stats} />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Gastos por Categoria</CardTitle>
-            <CardDescription>
-              Distribuição dos seus gastos no período selecionado
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={getChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="categoria" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Bar dataKey="valor" fill="#4361ee" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Próximo Lembrete
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {proximoLembrete ? (
-                <div className="space-y-2">
-                  <p className="font-medium">{proximoLembrete.descricao}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(proximoLembrete.data!).toLocaleDateString('pt-BR')}
-                  </p>
-                  {proximoLembrete.valor && (
-                    <p className="text-sm font-medium text-primary">
-                      {formatCurrency(proximoLembrete.valor)}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Nenhum lembrete próximo</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5" />
-                Dica do Dia
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">{dicaDoDia}</p>
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-2">
+          <DashboardCharts transacoes={transacoes} stats={stats} />
         </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Receitas vs Despesas</CardTitle>
-            <CardDescription>
-              Proporção entre receitas e despesas do período
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={getPieData()}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
-                  >
-                    {getPieData().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo do Período</CardTitle>
-            <CardDescription>
-              Estatísticas detalhadas do período selecionado
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Receitas</span>
-                <span className="text-green-600 font-semibold">
-                  {formatCurrency(stats.totalReceitas)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Despesas</span>
-                <span className="text-red-600 font-semibold">
-                  {formatCurrency(stats.totalDespesas)}
-                </span>
-              </div>
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Saldo</span>
-                  <span className={`font-bold ${stats.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(stats.saldo)}
-                  </span>
-                </div>
-              </div>
-              <div className="pt-2 border-t">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Total de Transações</span>
-                  <span className="font-semibold">{stats.transacoesCount}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm mt-2">
-                  <span>Lembretes Ativos</span>
-                  <span className="font-semibold">{stats.lembretesCount}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <DashboardSidebar lembretes={lembretes} />
       </div>
     </div>
   )
