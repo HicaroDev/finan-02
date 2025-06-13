@@ -27,13 +27,13 @@ interface Transacao {
   detalhes: string | null
   tipo: string | null
   categoria: string | null
-  userId: string | null
+  userid: string | null
 }
 
 interface Lembrete {
   id: number
   created_at: string
-  userId: string | null
+  userid: string | null
   descricao: string | null
   data: string | null
   valor: number | null
@@ -90,11 +90,11 @@ export default function Dashboard() {
       
       console.log('Dashboard: Date range:', { startDate, endDate })
 
-      // Buscar transações - usando campo 'quando' para filtro de data
+      // Buscar transações - usando campo 'quando' para filtro de data e 'userid' ao invés de 'userId'
       const { data: transacoes, error: transacoesError } = await supabase
         .from('transacoes')
         .select('*')
-        .eq('userId', user.id)
+        .eq('userid', user.id)
         .gte('quando', startDate.toISOString().split('T')[0])
         .lte('quando', endDate.toISOString().split('T')[0])
         .order('quando', { ascending: false })
@@ -106,11 +106,11 @@ export default function Dashboard() {
 
       console.log('Dashboard: Transactions fetched:', transacoes?.length || 0)
 
-      // Buscar lembretes - formatando datas corretamente
+      // Buscar lembretes - formatando datas corretamente e usando 'userid' ao invés de 'userId'
       const { data: lembretes, error: lembretesError } = await supabase
         .from('lembretes')
         .select('*')
-        .eq('userId', user.id)
+        .eq('userid', user.id)
         .gte('data', startDate.toISOString().split('T')[0])
         .lte('data', endDate.toISOString().split('T')[0])
         .order('data', { ascending: true })

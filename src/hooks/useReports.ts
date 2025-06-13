@@ -51,7 +51,7 @@ export function useReports() {
             nome
           )
         `)
-        .eq('userId', user.id)
+        .eq('userid', user.id)
 
       // Apply date filters
       if (filters.startDate) {

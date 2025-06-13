@@ -54,7 +54,7 @@ export type Database = {
           detalhes: string | null
           tipo: string | null
           categoria: string | null
-          userId: string | null
+          userid: string | null
         }
         Insert: {
           id?: number
@@ -65,7 +65,7 @@ export type Database = {
           detalhes?: string | null
           tipo?: string | null
           categoria?: string | null
-          userId?: string | null
+          userid?: string | null
         }
         Update: {
           id?: number
@@ -76,14 +76,14 @@ export type Database = {
           detalhes?: string | null
           tipo?: string | null
           categoria?: string | null
-          userId?: string | null
+          userid?: string | null
         }
       }
       lembretes: {
         Row: {
           id: number
           created_at: string
-          userId: string | null
+          userid: string | null
           descricao: string | null
           data: string | null
           valor: number | null
@@ -91,7 +91,7 @@ export type Database = {
         Insert: {
           id?: number
           created_at?: string
-          userId?: string | null
+          userid?: string | null
           descricao?: string | null
           data?: string | null
           valor?: number | null
@@ -99,7 +99,7 @@ export type Database = {
         Update: {
           id?: number
           created_at?: string
-          userId?: string | null
+          userid?: string | null
           descricao?: string | null
           data?: string | null
           valor?: number | null

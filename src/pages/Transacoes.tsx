@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,7 +28,7 @@ interface Transacao {
   detalhes: string | null
   tipo: string | null
   category_id: string
-  userId: string | null
+  userid: string | null
   categorias?: {
     id: string
     nome: string
@@ -104,7 +103,7 @@ export default function Transacoes() {
             nome
           )
         `)
-        .eq('userId', user?.id)
+        .eq('userid', user?.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -150,7 +149,7 @@ export default function Transacoes() {
         detalhes: formData.detalhes,
         tipo: formData.tipo,
         category_id: formData.category_id,
-        userId: user?.id,
+        userid: user?.id,
       }
 
       if (editingTransaction) {
@@ -229,7 +228,7 @@ export default function Transacoes() {
       const { error } = await supabase
         .from('transacoes')
         .delete()
-        .eq('userId', user?.id)
+        .eq('userid', user?.id)
 
       if (error) throw error
       toast({ title: "Todas as transações foram excluídas com sucesso!" })
