@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/hooks/use-toast'
@@ -7,14 +7,6 @@ import { DashboardStats } from '@/components/dashboard/DashboardStats'
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
-
-interface DashboardStats {
-  totalReceitas: number
-  totalDespesas: number
-  saldo: number
-  transacoesCount: number
-  lembretesCount: number
-}
 
 interface Transacao {
   id: number
@@ -24,8 +16,12 @@ interface Transacao {
   valor: number | null
   detalhes: string | null
   tipo: string | null
-  categoria: string | null
+  category_id: string
   userid: string | null
+  categorias?: {
+    id: string
+    nome: string
+  }
 }
 
 interface Lembrete {
@@ -39,98 +35,54 @@ interface Lembrete {
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const [stats, setStats] = useState<DashboardStats>({
-    totalReceitas: 0,
-    totalDespesas: 0,
-    saldo: 0,
-    transacoesCount: 0,
-    lembretesCount: 0,
-  })
   const [transacoes, setTransacoes] = useState<Transacao[]>([])
   const [lembretes, setLembretes] = useState<Lembrete[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Estados dos filtros
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth().toString())
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString())
 
   useEffect(() => {
-    if (user?.id) {
-      console.log('Dashboard: Loading data for user:', user.id)
-      fetchDashboardData()
+    if (user) {
+      fetchData()
     }
-  }, [user?.id, filterMonth, filterYear])
+  }, [user])
 
-  const fetchDashboardData = async () => {
-    if (!user?.id) {
-      console.error('Dashboard: No user ID available')
-      setLoading(false)
-      return
-    }
-
+  const fetchData = async () => {
     try {
       setLoading(true)
-      console.log('Dashboard: Fetching data for filters:', { month: filterMonth, year: filterYear })
-
-      // Criar datas de início e fim do período
-      const startDate = new Date(parseInt(filterYear), parseInt(filterMonth), 1)
-      const endDate = new Date(parseInt(filterYear), parseInt(filterMonth) + 1, 0, 23, 59, 59)
       
-      console.log('Dashboard: Date range:', { startDate, endDate })
-
-      // Buscar transações - usando campo 'quando' para filtro de data e 'userid' ao invés de 'userId'
-      const { data: transacoes, error: transacoesError } = await supabase
+      // Buscar transações
+      const { data: transacoesData, error: transacoesError } = await supabase
         .from('transacoes')
-        .select('*')
-        .eq('userid', user.id)
-        .gte('quando', startDate.toISOString().split('T')[0])
-        .lte('quando', endDate.toISOString().split('T')[0])
-        .order('quando', { ascending: false })
+        .select(`
+          *,
+          categorias!transacoes_category_id_fkey (
+            id,
+            nome
+          )
+        `)
+        .eq('userid', user?.id)
+        .order('created_at', { ascending: false })
 
-      if (transacoesError) {
-        console.error('Dashboard: Error fetching transactions:', transacoesError)
-        throw transacoesError
-      }
+      if (transacoesError) throw transacoesError
 
-      console.log('Dashboard: Transactions fetched:', transacoes?.length || 0)
-
-      // Buscar lembretes - formatando datas corretamente e usando 'userid' ao invés de 'userId'
-      const { data: lembretes, error: lembretesError } = await supabase
+      // Buscar lembretes
+      const { data: lembretesData, error: lembretesError } = await supabase
         .from('lembretes')
         .select('*')
-        .eq('userid', user.id)
-        .gte('data', startDate.toISOString().split('T')[0])
-        .lte('data', endDate.toISOString().split('T')[0])
+        .eq('userid', user?.id)
         .order('data', { ascending: true })
 
-      if (lembretesError) {
-        console.error('Dashboard: Error fetching lembretes:', lembretesError)
-        throw lembretesError
-      }
+      if (lembretesError) throw lembretesError
 
-      console.log('Dashboard: Lembretes fetched:', lembretes?.length || 0)
-
-      setTransacoes(transacoes || [])
-      setLembretes(lembretes || [])
-
-      // Calcular estatísticas
-      const receitas = transacoes?.filter(t => t.tipo === 'receita').reduce((sum, t) => sum + (t.valor || 0), 0) || 0
-      const despesas = transacoes?.filter(t => t.tipo === 'despesa').reduce((sum, t) => sum + (t.valor || 0), 0) || 0
-
-      const newStats = {
-        totalReceitas: receitas,
-        totalDespesas: despesas,
-        saldo: receitas - despesas,
-        transacoesCount: transacoes?.length || 0,
-        lembretesCount: lembretes?.length || 0,
-      }
-
-      console.log('Dashboard: Calculated stats:', newStats)
-      setStats(newStats)
-
+      setTransacoes(transacoesData || [])
+      setLembretes(lembretesData || [])
     } catch (error: any) {
-      console.error('Dashboard: Error loading data:', error)
       toast({
         title: "Erro ao carregar dados",
-        description: error.message || "Erro desconhecido ao carregar dados do dashboard",
+        description: error.message,
         variant: "destructive",
       })
     } finally {
@@ -138,33 +90,59 @@ export default function Dashboard() {
     }
   }
 
-  // Show loading state
+  // Filtrar transações por mês e ano
+  const filteredTransacoes = useMemo(() => {
+    return transacoes.filter(transacao => {
+      if (!transacao.quando) return false
+      
+      const transacaoDate = new Date(transacao.quando)
+      const transacaoMonth = transacaoDate.getMonth()
+      const transacaoYear = transacaoDate.getFullYear()
+      
+      return transacaoMonth === parseInt(filterMonth) && 
+             transacaoYear === parseInt(filterYear)
+    })
+  }, [transacoes, filterMonth, filterYear])
+
+  // Calcular estatísticas
+  const stats = useMemo(() => {
+    const totalReceitas = filteredTransacoes
+      .filter(t => t.tipo === 'receita')
+      .reduce((acc, t) => acc + (t.valor || 0), 0)
+    
+    const totalDespesas = filteredTransacoes
+      .filter(t => t.tipo === 'despesa')
+      .reduce((acc, t) => acc + (t.valor || 0), 0)
+    
+    const saldo = totalReceitas - totalDespesas
+    
+    const lembretesCount = lembretes.filter(l => {
+      if (!l.data) return false
+      const lembreteDate = new Date(l.data)
+      return lembreteDate.getMonth() === parseInt(filterMonth) && 
+             lembreteDate.getFullYear() === parseInt(filterYear)
+    }).length
+
+    return {
+      totalReceitas,
+      totalDespesas,
+      saldo,
+      transacoesCount: filteredTransacoes.length,
+      lembretesCount
+    }
+  }, [filteredTransacoes, lembretes, filterMonth, filterYear])
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <DashboardFilters 
-          filterMonth={filterMonth}
-          filterYear={filterYear}
-          setFilterMonth={setFilterMonth}
-          setFilterYear={setFilterYear}
-          transactionCount={0}
-        />
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-64"></div>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-muted rounded-lg h-32"></div>
+            <div key={i} className="h-32 bg-gray-200 rounded animate-pulse"></div>
           ))}
-        </div>
-      </div>
-    )
-  }
-
-  // Show error state if no user
-  if (!user?.id) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col items-center justify-center py-12">
-          <h2 className="text-2xl font-bold text-muted-foreground mb-2">Usuário não encontrado</h2>
-          <p className="text-muted-foreground">Faça login para visualizar seu dashboard</p>
         </div>
       </div>
     )
@@ -177,16 +155,18 @@ export default function Dashboard() {
         filterYear={filterYear}
         setFilterMonth={setFilterMonth}
         setFilterYear={setFilterYear}
-        transactionCount={transacoes.length}
+        transactionCount={filteredTransacoes.length}
       />
-
+      
       <DashboardStats stats={stats} />
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <DashboardCharts transacoes={transacoes} stats={stats} />
+          <DashboardCharts transacoes={filteredTransacoes} />
         </div>
-        <DashboardSidebar lembretes={lembretes} />
+        <div>
+          <DashboardSidebar lembretes={lembretes} />
+        </div>
       </div>
     </div>
   )

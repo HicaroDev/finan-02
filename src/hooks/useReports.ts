@@ -46,7 +46,7 @@ export function useReports() {
         .from('transacoes')
         .select(`
           *,
-          categorias (
+          categorias!transacoes_category_id_fkey (
             id,
             nome
           )

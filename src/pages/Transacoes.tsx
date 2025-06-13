@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -98,7 +99,7 @@ export default function Transacoes() {
         .from('transacoes')
         .select(`
           *,
-          categorias (
+          categorias!transacoes_category_id_fkey (
             id,
             nome
           )
