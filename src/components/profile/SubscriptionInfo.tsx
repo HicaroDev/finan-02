@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { supabase } from '@/integrations/supabase/client'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/hooks/use-toast'
 import { CreditCard, Calendar, DollarSign, RefreshCw, Clock } from 'lucide-react'
@@ -43,14 +44,14 @@ export function SubscriptionInfo() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('assinaturaid')
+        .select('assinaturaId')
         .eq('id', user?.id)
         .single()
 
       if (error) throw error
       
-      if (data?.assinaturaid) {
-        setAssinaturaId(data.assinaturaid)
+      if (data?.assinaturaId) {
+        setAssinaturaId(data.assinaturaId)
       } else {
         setLoading(false)
       }

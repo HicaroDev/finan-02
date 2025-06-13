@@ -1,7 +1,7 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
 export interface ReportTransaction {
@@ -51,7 +51,7 @@ export function useReports() {
             nome
           )
         `)
-        .eq('userid', user.id)
+        .eq('userId', user.id)
 
       // Apply date filters
       if (filters.startDate) {

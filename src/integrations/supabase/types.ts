@@ -42,29 +42,29 @@ export type Database = {
           data: string | null
           descricao: string | null
           id: number
-          userid: string | null
+          userId: string | null
           valor: number | null
         }
         Insert: {
           created_at?: string
           data?: string | null
           descricao?: string | null
-          id?: never
-          userid?: string | null
+          id?: number
+          userId?: string | null
           valor?: number | null
         }
         Update: {
           created_at?: string
           data?: string | null
           descricao?: string | null
-          id?: never
-          userid?: string | null
+          id?: number
+          userId?: string | null
           valor?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "lembretes_userid_fkey"
-            columns: ["userid"]
+            foreignKeyName: "lembretes_userId_fkey"
+            columns: ["userId"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -73,55 +73,43 @@ export type Database = {
       }
       profiles: {
         Row: {
-          assinaturaid: string | null
+          assinaturaId: string | null
           ativo: boolean | null
           avatar_url: string | null
           created_at: string
-          customerid: string | null
+          customerId: string | null
           email: string | null
           id: string
           nome: string | null
           phone: string | null
-          stripe_customer_id: string | null
-          subscription_end_date: string | null
-          subscription_id: string | null
-          subscription_status: string | null
           updated_at: string
           username: string | null
           whatsapp: string | null
         }
         Insert: {
-          assinaturaid?: string | null
+          assinaturaId?: string | null
           ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
-          customerid?: string | null
+          customerId?: string | null
           email?: string | null
           id: string
           nome?: string | null
           phone?: string | null
-          stripe_customer_id?: string | null
-          subscription_end_date?: string | null
-          subscription_id?: string | null
-          subscription_status?: string | null
           updated_at?: string
           username?: string | null
           whatsapp?: string | null
         }
         Update: {
-          assinaturaid?: string | null
+          assinaturaId?: string | null
           ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
-          customerid?: string | null
+          customerId?: string | null
           email?: string | null
           id?: string
           nome?: string | null
           phone?: string | null
-          stripe_customer_id?: string | null
-          subscription_end_date?: string | null
-          subscription_id?: string | null
-          subscription_status?: string | null
           updated_at?: string
           username?: string | null
           whatsapp?: string | null
@@ -137,7 +125,7 @@ export type Database = {
           id: number
           quando: string | null
           tipo: string | null
-          userid: string | null
+          userId: string | null
           valor: number | null
         }
         Insert: {
@@ -145,10 +133,10 @@ export type Database = {
           created_at?: string
           detalhes?: string | null
           estabelecimento?: string | null
-          id?: never
+          id?: number
           quando?: string | null
           tipo?: string | null
-          userid?: string | null
+          userId?: string | null
           valor?: number | null
         }
         Update: {
@@ -156,10 +144,10 @@ export type Database = {
           created_at?: string
           detalhes?: string | null
           estabelecimento?: string | null
-          id?: never
+          id?: number
           quando?: string | null
           tipo?: string | null
-          userid?: string | null
+          userId?: string | null
           valor?: number | null
         }
         Relationships: [
@@ -171,8 +159,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transacoes_userid_fkey"
-            columns: ["userid"]
+            foreignKeyName: "transacoes_userId_fkey"
+            columns: ["userId"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

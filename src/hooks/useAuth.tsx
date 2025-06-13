@@ -1,7 +1,7 @@
 
 import { useState, useEffect, createContext, useContext } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/integrations/supabase/client'
+import { supabase } from '@/lib/supabase'
 
 interface AuthContextType {
   user: User | null
@@ -20,7 +20,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session)
@@ -28,13 +35,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false)
       }
     )
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
 
     return () => subscription.unsubscribe()
   }, [])
@@ -52,11 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/`
-    
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
     return { error }
   }
 
