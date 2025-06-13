@@ -11,30 +11,27 @@ interface Transacao {
   valor: number | null
   detalhes: string | null
   tipo: string | null
-  categoria: string | null
+  category_id: string
   userid: string | null
+  categorias?: {
+    id: string
+    nome: string
+  }
 }
 
 interface DashboardChartsProps {
   transacoes: Transacao[]
-  stats: {
-    totalReceitas: number
-    totalDespesas: number
-    saldo: number
-    transacoesCount: number
-    lembretesCount: number
-  }
 }
 
 const COLORS = ['#4361ee', '#7209b7', '#f72585', '#4cc9f0', '#4895ef', '#4361ee']
 
-export function DashboardCharts({ transacoes, stats }: DashboardChartsProps) {
+export function DashboardCharts({ transacoes }: DashboardChartsProps) {
   const getChartData = () => {
     const categorias: { [key: string]: number } = {}
     
     transacoes.forEach(t => {
-      if (t.categoria && t.valor && t.tipo === 'despesa') {
-        categorias[t.categoria] = (categorias[t.categoria] || 0) + Math.abs(t.valor)
+      if (t.categorias?.nome && t.valor && t.tipo === 'despesa') {
+        categorias[t.categorias.nome] = (categorias[t.categorias.nome] || 0) + Math.abs(t.valor)
       }
     })
 
@@ -53,6 +50,14 @@ export function DashboardCharts({ transacoes, stats }: DashboardChartsProps) {
       { name: 'Despesas', value: Math.abs(despesas) }
     ]
   }
+
+  const stats = {
+    totalReceitas: transacoes.filter(t => t.tipo === 'receita').reduce((sum, t) => sum + (t.valor || 0), 0),
+    totalDespesas: transacoes.filter(t => t.tipo === 'despesa').reduce((sum, t) => sum + (t.valor || 0), 0),
+    transacoesCount: transacoes.length,
+    lembretesCount: 0 // This should come from props if needed
+  }
+  stats.saldo = stats.totalReceitas - stats.totalDespesas
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -142,10 +147,6 @@ export function DashboardCharts({ transacoes, stats }: DashboardChartsProps) {
               <div className="flex items-center justify-between text-sm">
                 <span>Total de Transações</span>
                 <span className="font-semibold">{stats.transacoesCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span>Lembretes Ativos</span>
-                <span className="font-semibold">{stats.lembretesCount}</span>
               </div>
             </div>
           </div>
